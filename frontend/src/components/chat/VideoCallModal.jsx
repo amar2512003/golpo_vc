@@ -15,6 +15,7 @@ export function VideoCallModal() {
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
+  const remoteAudioRef = useRef(null);
 
   useEffect(() => {
     if (localVideoRef.current && localStream) {
@@ -25,6 +26,15 @@ export function VideoCallModal() {
   useEffect(() => {
     if (remoteVideoRef.current && remoteStream) {
       remoteVideoRef.current.srcObject = remoteStream;
+    }
+
+    if (remoteAudioRef.current && remoteStream) {
+      remoteAudioRef.current.srcObject = remoteStream;
+
+      // Chrome sometimes requires play() after attaching srcObject
+      remoteAudioRef.current
+        .play()
+        .catch((err) => console.log("Audio autoplay blocked:", err));
     }
   }, [remoteStream]);
 
@@ -76,6 +86,13 @@ export function VideoCallModal() {
               Audio Call
             </p>
           </div>
+
+          {/* Hidden element that plays the remote audio */}
+          <audio
+            ref={remoteAudioRef}
+            autoPlay
+            playsInline
+          />
         </div>
       )}
 
