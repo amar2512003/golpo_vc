@@ -30,30 +30,30 @@ export function VideoCallModal() {
   if (callStatus === "idle") return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90">
-      <p className="mb-4 text-lg text-white">
+    <div className="fixed inset-0 z-50 flex flex-col bg-black/95">
+      <p className="mb-4 text-lg text-white text-center">
         {callStatus === "calling" && `Calling ${callPartner?.fullName}...`}
         {callStatus === "incoming" && `${callPartner?.fullName} is calling...`}
         {callStatus === "connected" && callPartner?.fullName}
       </p>
 
-      <div className="relative w-full max-w-2xl">
+      <div className="relative flex h-full w-full flex-1 items-center justify-center overflow-hidden">
         <video
           ref={remoteVideoRef}
           autoPlay
           playsInline
-          className="w-full rounded-xl bg-black"
+          className="h-full w-full object-cover"
         />
         <video
           ref={localVideoRef}
           autoPlay
           playsInline
           muted
-          className="absolute bottom-4 right-4 w-32 rounded-lg border-2 border-white"
+          className="absolute right-4 top-4 w-28 rounded-lg border-2 border-white shadow-lg sm:w-36"
         />
       </div>
 
-      <div className="mt-6 flex gap-4">
+      <div className="mb-8 mt-6 flex justify-center gap-4">
         {callStatus === "incoming" ? (
           <>
             <Button
@@ -63,6 +63,7 @@ export function VideoCallModal() {
             >
               <PhoneIcon className="size-5" />
             </Button>
+
             <Button
               isIconOnly
               className="bg-red-500 text-white"
@@ -72,7 +73,11 @@ export function VideoCallModal() {
             </Button>
           </>
         ) : (
-          <Button isIconOnly className="bg-red-500 text-white" onPress={endCall}>
+          <Button
+            isIconOnly
+            className="bg-red-500 text-white"
+            onPress={endCall}
+          >
             <PhoneOffIcon className="size-5" />
           </Button>
         )}
