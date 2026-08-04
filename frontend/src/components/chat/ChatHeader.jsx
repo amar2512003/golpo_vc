@@ -1,5 +1,5 @@
 import { Avatar, Button } from "@heroui/react";
-import { ChevronLeftIcon, Volume2Icon, VolumeXIcon, XIcon } from "lucide-react";
+import { ChevronLeftIcon, VideoIcon, Volume2Icon, VolumeXIcon, XIcon } from "lucide-react";
 import { AppLogo } from "../AppLogo";
 import { AvatarWithOnlineIndicator } from "./AvatarWithOnlineIndicator";
 
@@ -9,14 +9,25 @@ import { ThemeToggle } from "../ThemeToggle";
 import { WallpaperPicker } from "../WallpaperPicker";
 
 import { useChatStore } from "../../store/useChatStore";
+import { useCallStore } from "../../store/useCallStore";
 import { useSelectedConversation } from "../../hooks/useSelectedConversation";
 
 export function ChatHeader() {
   const isSoundEnabled = useChatStore((state) => state.isSoundEnabled);
   const setActiveConversationId = useChatStore((state) => state.setActiveConversationId);
   const setSoundEnabled = useChatStore((state) => state.setSoundEnabled);
+  const startCall = useCallStore((state) => state.startCall);
 
   const { activeConversation, isLargeScreen } = useSelectedConversation();
+
+  const handleStartCall = () => {
+    if (!activeConversation) return;
+    startCall({
+      _id: activeConversation.peer._id,
+      fullName: activeConversation.peer.name,
+      profilePic: activeConversation.peer.avatarUrl,
+    });
+  };
 
   return (
     <header className="sticky top-0 z-10 flex shrink-0 flex-wrap items-center gap-1 border-b border-border px-1.5 py-1.5 sm:gap-2 sm:px-2 sm:py-2">
@@ -75,6 +86,19 @@ export function ChatHeader() {
         </div>
 
         <ThemeToggle />
+
+        {activeConversation ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            isIconOnly
+            className="shrink-0"
+            aria-label="Start video call"
+            onPress={handleStartCall}
+          >
+            <VideoIcon className="size-5.5" strokeWidth={2} aria-hidden />
+          </Button>
+        ) : null}
 
         <Button
           variant="ghost"

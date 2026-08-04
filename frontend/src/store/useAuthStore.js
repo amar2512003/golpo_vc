@@ -2,7 +2,10 @@ import { create } from "zustand";
 import { axiosInstance } from "../lib/axios";
 import { io } from "socket.io-client";
 
-const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:3000" : "/";
+const BASE_URL =
+  import.meta.env.MODE === "development"
+    ? "http://localhost:3000"
+    : "/";
 
 export const useAuthStore = create((set, get) => ({
   authUser: null,
@@ -34,13 +37,49 @@ export const useAuthStore = create((set, get) => ({
   connectSocket: (user) => {
     if (!user || get().socket?.connected) return;
 
-    const socket = io(BASE_URL, { query: { userId: user._id } });
+    const socket = io(BASE_URL, {
+      query: { userId: user._id },
+    });
 
     set({ socket });
 
     socket.on("getOnlineUsers", (userIds) => {
       set({ onlineUsers: userIds });
     });
+
+    // ---------------- WebRTC Signaling Listeners ----------------
+
+    socket.on("call:offer", (data) => {
+      import("./useCallStore").then(({ useCallStore }) => {
+        useCallStore.getState().receiveOffer(data, {});
+      });
+    });
+
+    socket.on("call:answer", (data) => {
+      import("./useCallStore").then(({ useCallStore }) => {
+        useCallStore.getState().handleAnswer(data);
+      });
+    });
+
+    socket.on("call:ice-candidate", (data) => {
+      import("./useCallStore").then(({ useCallStore }) => {
+        useCallStore.getState().handleIceCandidate(data);
+      });
+    });
+
+    socket.on("call:end", () => {
+      import("./useCallStore").then(({ useCallStore }) => {
+        useCallStore.getState().resetCall();
+      });
+    });
+
+    socket.on("call:reject", () => {
+      import("./useCallStore").then(({ useCallStore }) => {
+        useCallStore.getState().resetCall();
+      });
+    });
+
+    // ---------------- End WebRTC Signaling ----------------
   },
 
   disconnectSocket: () => {
@@ -49,4 +88,3 @@ export const useAuthStore = create((set, get) => ({
     set({ socket: null });
   },
 }));
-
