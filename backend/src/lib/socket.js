@@ -27,13 +27,14 @@ io.on("connection", (socket) => {
   // ---------------- WebRTC Signaling ----------------
 
   // Send offer
-  socket.on("call:offer", ({ toUserId, fromUserId, offer }) => {
+  socket.on("call:offer", ({ toUserId, fromUserId, offer, callType }) => {
     const targetSocketId = getReceiverSocketId(toUserId);
 
     if (targetSocketId) {
       io.to(targetSocketId).emit("call:offer", {
         fromUserId,
         offer,
+        callType,
       });
     }
   });
