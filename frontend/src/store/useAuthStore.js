@@ -30,7 +30,12 @@ export const useAuthStore = create((set, get) => ({
   },
 
   clearAuth: () => {
-    set({ authUser: null, isCheckingAuth: false, onlineUsers: [] });
+    set({
+      authUser: null,
+      isCheckingAuth: false,
+      onlineUsers: [],
+    });
+
     get().disconnectSocket();
   },
 
@@ -38,20 +43,42 @@ export const useAuthStore = create((set, get) => ({
     if (!user || get().socket?.connected) return;
 
     const socket = io(BASE_URL, {
-      query: { userId: user._id },
+      query: {
+        userId: user._id,
+      },
     });
 
     set({ socket });
 
     socket.on("getOnlineUsers", (userIds) => {
-      set({ onlineUsers: userIds });
+      set({
+        onlineUsers: userIds,
+      });
     });
 
     // ---------------- WebRTC Signaling Listeners ----------------
 
     socket.on("call:offer", (data) => {
       import("./useCallStore").then(({ useCallStore }) => {
-        useCallStore.getState().receiveOffer(data, {});
+        import("./useChatStore").then(({ useChatStore }) => {
+          const { users, conversations } = useChatStore.getState();
+
+          const caller =
+            users.find((u) => u._id === data.fromUserId) ||
+            conversations.find((u) => u._id === data.fromUserId);
+
+          const callerInfo = caller
+            ? {
+                fullName: caller.fullName,
+                profilePic: caller.profilePic,
+              }
+            : {
+                fullName: "Unknown",
+                profilePic: null,
+              };
+
+          useCallStore.getState().receiveOffer(data, callerInfo);
+        });
       });
     });
 
@@ -84,7 +111,13 @@ export const useAuthStore = create((set, get) => ({
 
   disconnectSocket: () => {
     const socket = get().socket;
-    if (socket?.connected) socket.disconnect();
-    set({ socket: null });
+
+    if (socket?.connected) {
+      socket.disconnect();
+    }
+
+    set({
+      socket: null,
+    });
   },
 }));
