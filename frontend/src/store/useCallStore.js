@@ -12,22 +12,29 @@ export const useCallStore = create((set, get) => ({
   remoteStream: null,
   callPartner: null, // { _id, fullName, profilePic }
   incomingOffer: null,
+  callType: "video", // "video" | "audio"
 
-  startCall: async (targetUser) => {
+  startCall: async (targetUser, callType = "video") => {
     const socket = useAuthStore.getState().socket;
     const myId = useAuthStore.getState().authUser._id;
+
     if (!socket) return;
 
     const localStream = await navigator.mediaDevices.getUserMedia({
-      video: true,
+      video: callType === "video",
       audio: true,
     });
 
     const pc = new RTCPeerConnection(ICE_SERVERS);
-    localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
+
+    localStream.getTracks().forEach((track) => {
+      pc.addTrack(track, localStream);
+    });
 
     pc.ontrack = (event) => {
-      set({ remoteStream: event.streams[0] });
+      set({
+        remoteStream: event.streams[0],
+      });
     };
 
     pc.onicecandidate = (event) => {
@@ -46,6 +53,7 @@ export const useCallStore = create((set, get) => ({
       toUserId: targetUser._id,
       fromUserId: myId,
       offer,
+      callType,
     });
 
     set({
@@ -53,32 +61,48 @@ export const useCallStore = create((set, get) => ({
       localStream,
       callStatus: "calling",
       callPartner: targetUser,
+      callType,
     });
   },
 
-  receiveOffer: ({ fromUserId, offer }, callerInfo) => {
+  receiveOffer: ({ fromUserId, offer, callType }, callerInfo) => {
     set({
       callStatus: "incoming",
       incomingOffer: offer,
-      callPartner: { _id: fromUserId, ...callerInfo },
+      callPartner: {
+        _id: fromUserId,
+        ...callerInfo,
+      },
+      callType,
     });
   },
 
   acceptCall: async () => {
     const socket = useAuthStore.getState().socket;
-    const { incomingOffer, callPartner } = get();
+
+    const {
+      incomingOffer,
+      callPartner,
+      callType,
+    } = get();
+
     if (!socket || !incomingOffer || !callPartner) return;
 
     const localStream = await navigator.mediaDevices.getUserMedia({
-      video: true,
+      video: callType === "video",
       audio: true,
     });
 
     const pc = new RTCPeerConnection(ICE_SERVERS);
-    localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
+
+    localStream.getTracks().forEach((track) => {
+      pc.addTrack(track, localStream);
+    });
 
     pc.ontrack = (event) => {
-      set({ remoteStream: event.streams[0] });
+      set({
+        remoteStream: event.streams[0],
+      });
     };
 
     pc.onicecandidate = (event) => {
@@ -90,27 +114,48 @@ export const useCallStore = create((set, get) => ({
       }
     };
 
-    await pc.setRemoteDescription(new RTCSessionDescription(incomingOffer));
+    await pc.setRemoteDescription(
+      new RTCSessionDescription(incomingOffer)
+    );
+
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
 
-    socket.emit("call:answer", { toUserId: callPartner._id, answer });
+    socket.emit("call:answer", {
+      toUserId: callPartner._id,
+      answer,
+    });
 
-    set({ peerConnection: pc, localStream, callStatus: "connected" });
+    set({
+      peerConnection: pc,
+      localStream,
+      callStatus: "connected",
+    });
   },
 
   handleAnswer: async ({ answer }) => {
     const { peerConnection } = get();
+
     if (!peerConnection) return;
-    await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-    set({ callStatus: "connected" });
+
+    await peerConnection.setRemoteDescription(
+      new RTCSessionDescription(answer)
+    );
+
+    set({
+      callStatus: "connected",
+    });
   },
 
   handleIceCandidate: async ({ candidate }) => {
     const { peerConnection } = get();
+
     if (!peerConnection) return;
+
     try {
-      await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+      await peerConnection.addIceCandidate(
+        new RTCIceCandidate(candidate)
+      );
     } catch (err) {
       console.error("Error adding ICE candidate:", err);
     }
@@ -119,25 +164,41 @@ export const useCallStore = create((set, get) => ({
   rejectCall: () => {
     const socket = useAuthStore.getState().socket;
     const { callPartner } = get();
+
     if (socket && callPartner) {
-      socket.emit("call:reject", { toUserId: callPartner._id });
+      socket.emit("call:reject", {
+        toUserId: callPartner._id,
+      });
     }
+
     get().resetCall();
   },
 
   endCall: () => {
     const socket = useAuthStore.getState().socket;
     const { callPartner } = get();
+
     if (socket && callPartner) {
-      socket.emit("call:end", { toUserId: callPartner._id });
+      socket.emit("call:end", {
+        toUserId: callPartner._id,
+      });
     }
+
     get().resetCall();
   },
 
   resetCall: () => {
-    const { peerConnection, localStream } = get();
+    const {
+      peerConnection,
+      localStream,
+    } = get();
+
     peerConnection?.close();
-    localStream?.getTracks().forEach((track) => track.stop());
+
+    localStream?.getTracks().forEach((track) => {
+      track.stop();
+    });
+
     set({
       callStatus: "idle",
       peerConnection: null,
@@ -145,6 +206,7 @@ export const useCallStore = create((set, get) => ({
       remoteStream: null,
       callPartner: null,
       incomingOffer: null,
+      callType: "video",
     });
   },
 }));

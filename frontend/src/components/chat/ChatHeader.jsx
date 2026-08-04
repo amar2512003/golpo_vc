@@ -1,5 +1,12 @@
 import { Avatar, Button } from "@heroui/react";
-import { ChevronLeftIcon, VideoIcon, Volume2Icon, VolumeXIcon, XIcon } from "lucide-react";
+import {
+  ChevronLeftIcon,
+  PhoneIcon,
+  VideoIcon,
+  Volume2Icon,
+  VolumeXIcon,
+  XIcon,
+} from "lucide-react";
 import { AppLogo } from "../AppLogo";
 import { AvatarWithOnlineIndicator } from "./AvatarWithOnlineIndicator";
 
@@ -22,11 +29,28 @@ export function ChatHeader() {
 
   const handleStartCall = () => {
     if (!activeConversation) return;
-    startCall({
-      _id: activeConversation.peer._id,
-      fullName: activeConversation.peer.name,
-      profilePic: activeConversation.peer.avatarUrl,
-    });
+
+    startCall(
+      {
+        _id: activeConversation.peer._id,
+        fullName: activeConversation.peer.name,
+        profilePic: activeConversation.peer.avatarUrl,
+      },
+      "video"
+    );
+  };
+
+  const handleStartAudioCall = () => {
+    if (!activeConversation) return;
+
+    startCall(
+      {
+        _id: activeConversation.peer._id,
+        fullName: activeConversation.peer.name,
+        profilePic: activeConversation.peer.avatarUrl,
+      },
+      "audio"
+    );
   };
 
   return (
@@ -74,7 +98,9 @@ export function ChatHeader() {
         <div className="flex flex-1 items-center gap-2.5 sm:text-left">
           <AppLogo size={36} className="rounded-[9px]" />
           <div className="flex-1 text-center sm:text-left">
-            <p className="truncate text-[13px] font-medium text-muted">Select a conversation</p>
+            <p className="truncate text-[13px] font-medium text-muted">
+              Select a conversation
+            </p>
           </div>
         </div>
       )}
@@ -88,16 +114,29 @@ export function ChatHeader() {
         <ThemeToggle />
 
         {activeConversation ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            isIconOnly
-            className="shrink-0"
-            aria-label="Start video call"
-            onPress={handleStartCall}
-          >
-            <VideoIcon className="size-5.5" strokeWidth={2} aria-hidden />
-          </Button>
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              isIconOnly
+              className="shrink-0"
+              aria-label="Start audio call"
+              onPress={handleStartAudioCall}
+            >
+              <PhoneIcon className="size-5.5" strokeWidth={2} aria-hidden />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              isIconOnly
+              className="shrink-0"
+              aria-label="Start video call"
+              onPress={handleStartCall}
+            >
+              <VideoIcon className="size-5.5" strokeWidth={2} aria-hidden />
+            </Button>
+          </>
         ) : null}
 
         <Button
